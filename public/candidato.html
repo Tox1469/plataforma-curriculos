@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel do Candidato</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+  <header class="bg-blue-600 text-white p-4 flex justify-between">
+    <h1 class="text-xl font-bold">Painel do Candidato</h1>
+    <button onclick="logout()" class="bg-white text-blue-600 px-4 py-1 rounded">Sair</button>
+  </header>
+
+  <main class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded mt-8">
+    <h2 class="text-xl font-semibold mb-4">Meu Currículo</h2>
+    <form id="formCurriculo" class="space-y-4">
+      <input type="text" name="nome" placeholder="Nome completo" class="w-full border p-2 rounded" required />
+      <input type="text" name="ultimo_cargo" placeholder="Último cargo exercido" class="w-full border p-2 rounded" />
+      <input type="date" name="data_demissao" placeholder="Última data de demissão" class="w-full border p-2 rounded" />
+
+      <div class="grid grid-cols-2 gap-4">
+        <label><input type="checkbox" name="nr10" /> Habilitação NR10</label>
+        <label><input type="checkbox" name="nr33" /> Habilitação NR33</label>
+        <label><input type="checkbox" name="nr35" /> Habilitação NR35</label>
+      </div>
+
+      <textarea name="outras" rows="3" placeholder="Outras certificações" class="w-full border p-2 rounded"></textarea>
+      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Salvar Currículo</button>
+    </form>
+  </main>
+
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token || localStorage.getItem('tipo') !== 'candidato') window.location.href = 'login.html';
+
+    const form = document.getElementById('formCurriculo');
+
+    async function carregarCurriculo() {
+      const res = await fetch('http://localhost:3001/candidato/meu', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const dados = await res.json();
+      if (dados && dados.nome) {
+        form.nome.value = dados.nome;
+        form.ultimo_cargo.value = dados.ultimo_cargo || '';
+        form.data_demissao.value = dados.data_demissao || '';
+        form.nr10.checked = !!dados.nr10;
+        form.nr33.checked = !!dados.nr33;
+        form.nr35.checked = !!dados.nr35;
+        form.outras.value = dados.outras || '';
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const dados = {
+        nome: form.nome.value,
+        ultimo_cargo: form.ultimo_cargo.value,
+        data_demissao: form.data_demissao.value,
+        nr10: form.nr10.checked,
+        nr33: form.nr33.checked,
+        nr35: form.nr35.checked,
+        outras: form.outras.value
+      };
+
+      const res = await fetch('http://localhost:3001/candidato/curriculo', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dados)
+      });
+
+      if (res.ok) {
+        alert('Currículo salvo com sucesso!');
+      } else {
+        alert('Erro ao salvar currículo');
+      }
+    });
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    carregarCurriculo();
+  </script>
+</body>
+</html>

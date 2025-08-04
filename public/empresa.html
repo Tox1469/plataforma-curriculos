@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel da Empresa</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+  <header class="bg-blue-600 text-white p-4 flex justify-between">
+    <h1 class="text-xl font-bold">Painel da Empresa</h1>
+    <button onclick="logout()" class="bg-white text-blue-600 px-4 py-1 rounded">Sair</button>
+  </header>
+
+  <main class="max-w-5xl mx-auto p-6 bg-white shadow-md rounded mt-8">
+    <h2 class="text-xl font-semibold mb-4">Candidatos Disponíveis</h2>
+    <div id="listaCandidatos" class="space-y-4"></div>
+  </main>
+
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token || localStorage.getItem('tipo') !== 'empresa') window.location.href = 'login.html';
+
+    async function carregarCandidatos() {
+      const res = await fetch('http://localhost:3001/empresa/listar', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const lista = await res.json();
+      const container = document.getElementById('listaCandidatos');
+      container.innerHTML = '';
+
+      lista.forEach(c => {
+        const item = document.createElement('div');
+        item.className = "border p-4 rounded shadow flex justify-between items-center";
+        item.innerHTML = `
+          <div>
+            <p><strong>Nome:</strong> ${c.nome}</p>
+            <p><strong>Último Cargo:</strong> ${c.ultimo_cargo || '-'}</p>
+            <p><strong>Demissão:</strong> ${c.data_demissao || '-'}</p>
+          </div>
+          <button class="bg-green-600 text-white px-4 py-2 rounded" onclick="verDetalhes(${c.id})">Ver Detalhes (-1 crédito)</button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    async function verDetalhes(id) {
+      const res = await fetch(`http://localhost:3001/empresa/detalhes/${id}`, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+
+      if (res.ok) {
+        const c = await res.json();
+        alert(
+          `Nome: ${c.nome}\n` +
+          `Último Cargo: ${c.ultimo_cargo}\n` +
+          `Demissão: ${c.data_demissao}\n` +
+          `NR10: ${c.nr10 ? 'Sim' : 'Não'}\n` +
+          `NR33: ${c.nr33 ? 'Sim' : 'Não'}\n` +
+          `NR35: ${c.nr35 ? 'Sim' : 'Não'}\n` +
+          `Outras: ${c.outras}`
+        );
+        carregarCandidatos(); // opcional
+      } else {
+        const erro = await res.json();
+        alert('Erro: ' + erro.erro);
+      }
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    carregarCandidatos();
+  </script>
+</body>
+</html>

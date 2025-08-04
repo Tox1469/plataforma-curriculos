@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel Master</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+  <header class="bg-blue-600 text-white p-4 flex justify-between">
+    <h1 class="text-xl font-bold">Painel Master</h1>
+    <button onclick="logout()" class="bg-white text-blue-600 px-4 py-1 rounded">Sair</button>
+  </header>
+
+  <main class="max-w-5xl mx-auto p-6 bg-white shadow-md rounded mt-8">
+    <h2 class="text-xl font-semibold mb-4">Usuários Cadastrados</h2>
+    <div id="listaUsuarios" class="space-y-4"></div>
+  </main>
+
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token || localStorage.getItem('tipo') !== 'admin') window.location.href = 'login.html';
+
+    async function carregarUsuarios() {
+      const res = await fetch('http://localhost:3001/admin/usuarios', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const lista = await res.json();
+      const container = document.getElementById('listaUsuarios');
+      container.innerHTML = '';
+
+      lista.forEach(u => {
+        const item = document.createElement('div');
+        item.className = "border p-4 rounded shadow flex justify-between items-center";
+        item.innerHTML = `
+          <div>
+            <p><strong>Nome:</strong> ${u.nome}</p>
+            <p><strong>Email:</strong> ${u.email}</p>
+            <p><strong>Tipo:</strong> ${u.tipo}</p>
+            <p><strong>CPF/CNPJ:</strong> ${u.cpf_cnpj}</p>
+            <p><strong>Créditos:</strong> ${u.creditos}</p>
+          </div>
+          ${u.tipo === 'empresa' ? `
+          <button onclick="adicionarCreditos(${u.id})" class="bg-indigo-600 text-white px-4 py-2 rounded">+ Créditos</button>
+          ` : ''}
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    async function adicionarCreditos(usuarioId) {
+      const quantidade = prompt("Quantos créditos deseja adicionar?");
+      if (!quantidade) return;
+
+      const res = await fetch('http://localhost:3001/admin/add-creditos', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ usuarioId, quantidade: Number(quantidade) })
+      });
+
+      if (res.ok) {
+        alert('Créditos adicionados com sucesso!');
+        carregarUsuarios();
+      } else {
+        alert('Erro ao adicionar créditos');
+      }
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    }
+
+    carregarUsuarios();
+  </script>
+</body>
+</html>
