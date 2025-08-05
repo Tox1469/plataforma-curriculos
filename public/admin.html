@@ -22,7 +22,7 @@
     if (!token || localStorage.getItem('tipo') !== 'admin') window.location.href = 'login.html';
 
     async function carregarUsuarios() {
-      const res = await fetch('http://localhost:3001/admin/usuarios', {
+      const res = await fetch('https://plataforma-curriculos.onrender.com/admin/usuarios', {
         headers: { 'Authorization': 'Bearer ' + token }
       });
       const lista = await res.json();
@@ -52,7 +52,7 @@
       const quantidade = prompt("Quantos créditos deseja adicionar?");
       if (!quantidade) return;
 
-      const res = await fetch('http://localhost:3001/admin/add-creditos', {
+      const res = await fetch('https://plataforma-curriculos.onrender.com/admin/add-creditos', {
         method: 'POST',
         headers: {
           'Authorization': 'Bearer ' + token,

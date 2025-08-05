@@ -45,7 +45,7 @@
         cpf_cnpj: form.cpf_cnpj.value
       };
 
-      const res = await fetch('http://localhost:3001/auth/registro', {
+      const res = await fetch('https://plataforma-curriculos.onrender.com/auth/registro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
