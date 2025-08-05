@@ -6,88 +6,49 @@
   <title>Login - Plataforma de Currículos</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-
-  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-    <h2 class="text-2xl font-bold text-center mb-6">Login</h2>
-    
-    <form id="loginForm" class="space-y-4">
-      <div>
-        <label for="email" class="block text-gray-700">Email</label>
-        <input type="email" name="email" required class="w-full p-2 border border-gray-300 rounded" />
-      </div>
-
-      <div>
-        <label for="senha" class="block text-gray-700">Senha</label>
-        <input type="password" name="senha" required class="w-full p-2 border border-gray-300 rounded" />
-      </div>
-
-      <div>
-        <label for="tipo" class="block text-gray-700">Tipo de Usuário</label>
-        <select name="tipo" required class="w-full p-2 border border-gray-300 rounded">
-          <option value="">Selecione</option>
-          <option value="candidato">Candidato</option>
-          <option value="empresa">Empresa</option>
-          <option value="admin">Admin</option>
-        </select>
-      </div>
-
-      <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white shadow-xl rounded-xl p-8 w-full max-w-lg">
+    <h2 class="text-2xl font-bold text-center mb-6">Entrar na Conta</h2>
+    <form id="formLogin" class="space-y-4">
+      <input class="w-full p-2 border rounded" type="email" name="email" placeholder="Email" required />
+      <input class="w-full p-2 border rounded" type="password" name="senha" placeholder="Senha" required />
+      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
         Entrar
       </button>
     </form>
+
+    <p class="text-sm text-center mt-4">
+      Não tem uma conta? <a href="registro.html" class="text-blue-500 underline">Registrar</a>
+    </p>
   </div>
 
   <script>
-    const form = document.getElementById('loginForm');
-
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('formLogin').addEventListener('submit', async (e) => {
       e.preventDefault();
-
-      const dados = {
+      const form = e.target;
+      const data = {
         email: form.email.value,
-        senha: form.senha.value,
-        tipo: form.tipo.value,
+        senha: form.senha.value
       };
 
-      try {
-        const res = await fetch('https://plataforma-curriculos.onrender.com/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(dados),
-        });
+      const res = await fetch('http://localhost:3001/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
 
-        const resultado = await res.json();
-
-        if (res.ok) {
-          localStorage.setItem('token', resultado.token);
-
-          // Redirecionamento baseado no tipo
-          switch (dados.tipo) {
-            case 'admin':
-              window.location.href = '/admin.html';
-              break;
-            case 'empresa':
-              window.location.href = '/empresa.html';
-              break;
-            case 'candidato':
-              window.location.href = '/candidato.html';
-              break;
-            default:
-              alert('Tipo de usuário inválido.');
-          }
-        } else {
-          alert(resultado.erro || 'Falha ao fazer login');
-        }
-
-      } catch (erro) {
-        console.error(erro);
-        alert('Erro de conexão com o servidor.');
+      const result = await res.json();
+      if (res.ok) {
+        localStorage.setItem('token', result.token);
+        localStorage.setItem('tipo', result.tipo);
+        // Redireciona para o painel apropriado
+        if (result.tipo === 'admin') window.location.href = 'admin.html';
+        else if (result.tipo === 'empresa') window.location.href = 'empresa.html';
+        else window.location.href = 'candidato.html';
+      } else {
+        alert('Erro: ' + result.erro);
       }
     });
   </script>
-
 </body>
 </html>

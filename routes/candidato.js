@@ -1,35 +1,47 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
-const autenticar = require('../middleware/autenticar');
-const db = require('../database/db');
+const db = require('../models/init');
+const autenticar = require('../middleware/auth');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-});
-const upload = multer({ storage });
-
+// Criar ou atualizar currículo
 router.post('/curriculo', autenticar, (req, res) => {
-  const { nome, cargo, dataDemissao, outrasHabilitacoes } = req.body;
+  if (req.usuario.tipo !== 'candidato')
+    return res.status(403).json({ erro: 'Acesso negado' });
 
-  if (!nome || !cargo || !dataDemissao) {
-    return res.status(400).json({ erro: 'Campos obrigatórios ausentes.' });
-  }
+  const { nome, ultimo_cargo, data_demissao, nr10, nr33, nr35, outras } = req.body;
 
-  const query = 'INSERT INTO curriculos (nome, cargo, dataDemissao, outrasHabilitacoes) VALUES (?, ?, ?, ?)';
-  const params = [nome, cargo, dataDemissao, outrasHabilitacoes];
-
-  db.run(query, params, function (err) {
-    if (err) return res.status(500).json({ erro: 'Erro ao salvar no banco.' });
-    res.json({ id: this.lastID });
+  db.get(`SELECT * FROM candidatos WHERE usuario_id = ?`, [req.usuario.id], (err, row) => {
+    if (row) {
+      db.run(
+        `UPDATE candidatos SET nome = ?, ultimo_cargo = ?, data_demissao = ?, nr10 = ?, nr33 = ?, nr35 = ?, outras = ? WHERE usuario_id = ?`,
+        [nome, ultimo_cargo, data_demissao, nr10, nr33, nr35, outras, req.usuario.id],
+        function (err) {
+          if (err) return res.status(500).json({ erro: 'Erro ao atualizar currículo' });
+          res.json({ msg: 'Currículo atualizado' });
+        }
+      );
+    } else {
+      db.run(
+        `INSERT INTO candidatos (usuario_id, nome, ultimo_cargo, data_demissao, nr10, nr33, nr35, outras) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [req.usuario.id, nome, ultimo_cargo, data_demissao, nr10, nr33, nr35, outras],
+        function (err) {
+          if (err) return res.status(500).json({ erro: 'Erro ao criar currículo' });
+          res.json({ msg: 'Currículo criado' });
+        }
+      );
+    }
   });
 });
 
-router.post('/upload', autenticar, upload.single('documento'), (req, res) => {
-  if (!req.file) return res.status(400).json({ erro: 'Arquivo não enviado.' });
-  res.json({ mensagem: 'Upload realizado com sucesso!', arquivo: req.file.filename });
+// Ver currículo próprio
+router.get('/meu', autenticar, (req, res) => {
+  if (req.usuario.tipo !== 'candidato')
+    return res.status(403).json({ erro: 'Acesso negado' });
+
+  db.get(`SELECT * FROM candidatos WHERE usuario_id = ?`, [req.usuario.id], (err, row) => {
+    if (err) return res.status(500).json({ erro: 'Erro ao buscar' });
+    res.json(row || {});
+  });
 });
 
 module.exports = router;

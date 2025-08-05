@@ -1,77 +1,62 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastro</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registro - Plataforma de Currículos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
-  <div class="bg-white shadow-md rounded-lg p-8 max-w-lg w-full">
+  <div class="bg-white shadow-xl rounded-xl p-8 w-full max-w-lg">
     <h2 class="text-2xl font-bold text-center mb-6">Criar Conta</h2>
-    <form id="registroForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="md:col-span-2">
-        <label class="block text-gray-700">Nome Completo</label>
-        <input type="text" name="nome" required class="w-full p-2 border rounded">
-      </div>
-      <div>
-        <label class="block text-gray-700">Email</label>
-        <input type="email" name="email" required class="w-full p-2 border rounded">
-      </div>
-      <div>
-        <label class="block text-gray-700">Senha</label>
-        <input type="password" name="senha" required class="w-full p-2 border rounded">
-      </div>
-      <div>
-        <label class="block text-gray-700">Tipo de Usuário</label>
-        <select name="tipo" required class="w-full p-2 border rounded">
-          <option value="">Selecione</option>
-          <option value="candidato">Candidato</option>
-          <option value="empresa">Empresa</option>
-          <option value="admin">Admin</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-gray-700">CPF (Candidato) ou CNPJ (Empresa)</label>
-        <input type="text" name="documento" required class="w-full p-2 border rounded">
-      </div>
-      <div class="md:col-span-2">
-        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Cadastrar</button>
-      </div>
+    <form id="formRegistro" class="space-y-4">
+      <input class="w-full p-2 border rounded" type="text" name="nome" placeholder="Nome completo" required />
+      <input class="w-full p-2 border rounded" type="email" name="email" placeholder="Email" required />
+      <input class="w-full p-2 border rounded" type="password" name="senha" placeholder="Senha" required />
+      
+      <select name="tipo" class="w-full p-2 border rounded" required>
+        <option value="">Selecione o tipo de usuário</option>
+        <option value="admin">Master (Admin)</option>
+        <option value="empresa">Empresa</option>
+        <option value="candidato">Candidato</option>
+      </select>
+
+      <input class="w-full p-2 border rounded" type="text" name="cpf_cnpj" placeholder="CPF ou CNPJ" required />
+      
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+        Registrar
+      </button>
     </form>
-    <p class="text-center text-sm mt-4">Já tem conta? <a href="login.html" class="text-blue-600 hover:underline">Entrar</a></p>
-    <p id="erro" class="text-red-500 text-sm mt-3 text-center"></p>
+
+    <p class="text-sm text-center mt-4">
+      Já tem uma conta? <a href="login.html" class="text-blue-500 underline">Faça login</a>
+    </p>
   </div>
 
   <script>
-    document.getElementById('registroForm').addEventListener('submit', async function (e) {
+    document.getElementById('formRegistro').addEventListener('submit', async (e) => {
       e.preventDefault();
-
+      const form = e.target;
       const data = {
-        nome: this.nome.value,
-        email: this.email.value,
-        senha: this.senha.value,
-        tipo: this.tipo.value,
-        documento: this.documento.value
+        nome: form.nome.value,
+        email: form.email.value,
+        senha: form.senha.value,
+        tipo: form.tipo.value,
+        cpf_cnpj: form.cpf_cnpj.value
       };
 
-      try {
-        const res = await fetch('https://plataforma-curriculos.onrender.com/auth/registro', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
+      const res = await fetch('http://localhost:3001/auth/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
 
-        const result = await res.json();
-
-        if (res.ok) {
-          window.location.href = 'login.html';
-        } else {
-          document.getElementById('erro').textContent = result.erro || 'Erro ao registrar usuário.';
-        }
-      } catch (err) {
-        document.getElementById('erro').textContent = 'Erro ao conectar com o servidor.';
-        console.error(err);
+      if (res.ok) {
+        alert('Registro realizado com sucesso!');
+        window.location.href = 'login.html';
+      } else {
+        const error = await res.json();
+        alert('Erro: ' + error.erro);
       }
     });
   </script>

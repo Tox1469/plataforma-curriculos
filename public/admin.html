@@ -1,42 +1,28 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Painel Master</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script></head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel Master</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
 <body class="bg-gray-100">
-<header class="bg-blue-600 text-white p-4 flex justify-between">
-<h1 class="text-xl font-bold">Painel Master</h1>
-<button class="bg-white text-blue-600 px-4 py-1 rounded" onclick="logout()">Sair</button>
-</header>
-<main class="max-w-5xl mx-auto p-6 bg-white shadow-md rounded mt-8">
+  <header class="bg-blue-600 text-white p-4 flex justify-between">
+    <h1 class="text-xl font-bold">Painel Master</h1>
+    <button onclick="logout()" class="bg-white text-blue-600 px-4 py-1 rounded">Sair</button>
+  </header>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-<div class="bg-gray-50 p-4 rounded shadow">
-<h3 class="text-center font-semibold mb-2">Usuários por Tipo</h3>
-<canvas id="usuariosChart"></canvas>
-</div>
-<div class="bg-gray-50 p-4 rounded shadow">
-<h3 class="text-center font-semibold mb-2">Créditos por Empresa</h3>
-<canvas id="creditosChart"></canvas>
-</div>
-<div class="bg-gray-50 p-4 rounded shadow">
-<h3 class="text-center font-semibold mb-2">Distribuição NR</h3>
-<canvas id="nrChart"></canvas>
-</div>
-</div>
-<h2 class="text-xl font-semibold mb-4">Usuários Cadastrados</h2>
-<div class="space-y-4" id="listaUsuarios"></div>
-</main>
-<script>
+  <main class="max-w-5xl mx-auto p-6 bg-white shadow-md rounded mt-8">
+    <h2 class="text-xl font-semibold mb-4">Usuários Cadastrados</h2>
+    <div id="listaUsuarios" class="space-y-4"></div>
+  </main>
+
+  <script>
     const token = localStorage.getItem('token');
     if (!token || localStorage.getItem('tipo') !== 'admin') window.location.href = 'login.html';
 
     async function carregarUsuarios() {
-      const res = await fetch('https://plataforma-curriculos.onrender.com/admin/usuarios', {
+      const res = await fetch('http://localhost:3001/admin/usuarios', {
         headers: { 'Authorization': 'Bearer ' + token }
       });
       const lista = await res.json();
@@ -45,26 +31,28 @@
 
       lista.forEach(u => {
         const item = document.createElement('div');
-        item.className = "border p-4 rounded shadow";
+        item.className = "border p-4 rounded shadow flex justify-between items-center";
         item.innerHTML = `
-          <p><strong>Nome:</strong> ${u.nome}</p>
-          <p><strong>Email:</strong> ${u.email}</p>
-          <p><strong>Tipo:</strong> ${u.tipo}</p>
-          <p><strong>CPF/CNPJ:</strong> ${u.cpf_cnpj}</p>
-          <div class="flex items-center gap-4 mt-2">
-            <label><strong>Créditos:</strong></label>
-            <input type="number" id="credito-${u.id}" value="${u.creditos}" class="border px-2 py-1 rounded w-24" />
-            <button onclick="salvarCreditos(${u.id})" class="bg-indigo-600 text-white px-3 py-1 rounded">Salvar Créditos</button>
-            <button onclick="verCurriculo(${u.id})" class="bg-green-600 text-white px-3 py-1 rounded">Ver Currículo</button>
+          <div>
+            <p><strong>Nome:</strong> ${u.nome}</p>
+            <p><strong>Email:</strong> ${u.email}</p>
+            <p><strong>Tipo:</strong> ${u.tipo}</p>
+            <p><strong>CPF/CNPJ:</strong> ${u.cpf_cnpj}</p>
+            <p><strong>Créditos:</strong> ${u.creditos}</p>
           </div>
+          ${u.tipo === 'empresa' ? `
+          <button onclick="adicionarCreditos(${u.id})" class="bg-indigo-600 text-white px-4 py-2 rounded">+ Créditos</button>
+          ` : ''}
         `;
         container.appendChild(item);
       });
     }
 
-    async function salvarCreditos(usuarioId) {
-      const quantidade = document.getElementById(`credito-${usuarioId}`).value;
-      const res = await fetch('https://plataforma-curriculos.onrender.com/admin/add-creditos', {
+    async function adicionarCreditos(usuarioId) {
+      const quantidade = prompt("Quantos créditos deseja adicionar?");
+      if (!quantidade) return;
+
+      const res = await fetch('http://localhost:3001/admin/add-creditos', {
         method: 'POST',
         headers: {
           'Authorization': 'Bearer ' + token,
@@ -74,35 +62,11 @@
       });
 
       if (res.ok) {
-        alert('Créditos atualizados com sucesso!');
+        alert('Créditos adicionados com sucesso!');
         carregarUsuarios();
       } else {
-        alert('Erro ao atualizar créditos');
+        alert('Erro ao adicionar créditos');
       }
-    }
-
-    async function verCurriculo(usuarioId) {
-      const res = await fetch(`https://plataforma-curriculos.onrender.com/admin/curriculo/${usuarioId}`, {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      if (!res.ok) {
-        alert('Erro ao buscar currículo');
-        return;
-      }
-      const c = await res.json();
-      if (!c || !c.nome) {
-        alert('Currículo não encontrado');
-        return;
-      }
-      alert(
-        `Nome: ${c.nome}\n` +
-        `Último Cargo: ${c.ultimo_cargo || '-' }\n` +
-        `Data de Demissão: ${c.data_demissao || '-' }\n` +
-        `NR10: ${c.nr10 ? 'Sim' : 'Não'}\n` +
-        `NR33: ${c.nr33 ? 'Sim' : 'Não'}\n` +
-        `NR35: ${c.nr35 ? 'Sim' : 'Não'}\n` +
-        `Outras: ${c.outras || '-' }`
-      );
     }
 
     function logout() {
@@ -111,45 +75,6 @@
     }
 
     carregarUsuarios();
-</script><script>
-  async function carregarGraficos() {
-    const res = await fetch('https://plataforma-curriculos.onrender.com/admin/dashboard/dados', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    const dados = await res.json();
-
-    const tipos = dados.usuarios.map(u => u.tipo);
-    const totais = dados.usuarios.map(u => u.total);
-
-    new Chart(document.getElementById('usuariosChart'), {
-      type: 'doughnut',
-      data: {
-        labels: tipos,
-        datasets: [{ data: totais, backgroundColor: ['#3B82F6', '#10B981', '#F59E0B'] }]
-      }
-    });
-
-    const nomes = dados.empresas.map(e => e.nome);
-    const creditos = dados.empresas.map(e => e.creditos);
-
-    new Chart(document.getElementById('creditosChart'), {
-      type: 'bar',
-      data: {
-        labels: nomes,
-        datasets: [{ label: 'Créditos', data: creditos, backgroundColor: '#6366F1' }]
-      },
-      options: { responsive: true, indexAxis: 'y' }
-    });
-
-    new Chart(document.getElementById('nrChart'), {
-      type: 'pie',
-      data: {
-        labels: ['NR10', 'NR33', 'NR35'],
-        datasets: [{ data: [dados.habilitacoes.nr10, dados.habilitacoes.nr33, dados.habilitacoes.nr35], backgroundColor: ['#F87171', '#FBBF24', '#34D399'] }]
-      }
-    });
-  }
-
-  carregarGraficos();
-</script></body>
+  </script>
+</body>
 </html>
