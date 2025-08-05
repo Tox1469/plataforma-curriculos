@@ -1,3 +1,4 @@
+const rotaCurriculo = require('./routes/curriculo');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -17,6 +18,7 @@ app.use('/auth', require('./routes/auth'));
 app.use('/candidato', require('./routes/candidato'));
 app.use('/empresa', require('./routes/empresa'));
 app.use('/admin', require('./routes/admin'));
+app.use('/candidato/curriculo', rotaCurriculo);
 
 // Rota fallback para SPA
 app.get('*', (req, res) => {
