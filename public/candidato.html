@@ -37,7 +37,7 @@
     const form = document.getElementById('formCurriculo');
 
     async function carregarCurriculo() {
-      const res = await fetch('http://localhost:3001/candidato/meu', {
+      const res = await fetch('https://plataforma-curriculos.onrender.com/candidato/meu', {
         headers: { 'Authorization': 'Bearer ' + token }
       });
       const dados = await res.json();
@@ -64,7 +64,7 @@
         outras: form.outras.value
       };
 
-      const res = await fetch('http://localhost:3001/candidato/curriculo', {
+      const res = await fetch('https://plataforma-curriculos.onrender.com/candidato/curriculo', {
         method: 'POST',
         headers: {
           'Authorization': 'Bearer ' + token,
