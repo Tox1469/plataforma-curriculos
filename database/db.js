@@ -1,11 +1,13 @@
 const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
 
-// Conecta no arquivo db.sqlite que você já tem
-const db = new sqlite3.Database('./db.sqlite', (err) => {
+const dbPath = path.resolve(__dirname, './db.sqlite'); // ajuste o caminho se estiver fora
+
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
-    console.error('Erro ao conectar ao banco de dados:', err.message);
+    console.error('Erro ao conectar no banco de dados:', err.message);
   } else {
-    console.log('Conectado ao banco de dados SQLite com sucesso!');
+    console.log('Conectado ao banco de dados SQLite.');
   }
 });
 
