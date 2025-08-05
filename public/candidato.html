@@ -3,80 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal do Candidato</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Área do Candidato</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100 min-h-screen p-4">
-  <div class="max-w-xl mx-auto bg-white shadow p-6 rounded">
-    <h1 class="text-2xl font-bold mb-4">Bem-vindo, Candidato</h1>
+<body class="bg-gray-100 min-h-screen p-6">
+  <div class="max-w-3xl mx-auto bg-white shadow rounded-lg p-6">
+    <h1 class="text-2xl font-bold text-gray-800 mb-4">Bem-vindo, <span id="nomeUsuario"></span></h1>
 
-    <form id="formCurriculo" class="space-y-4">
-      <input type="text" name="nome" placeholder="Nome completo" class="w-full border p-2 rounded" required />
-      <input type="text" name="cargo" placeholder="Último cargo" class="w-full border p-2 rounded" required />
-      <input type="date" name="data_demissao" placeholder="Última demissão" class="w-full border p-2 rounded" required />
-      <textarea name="outras_habilitacoes" placeholder="Outras habilitações" class="w-full border p-2 rounded"></textarea>
-      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar Currículo</button>
+    <form id="curriculoForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Nome Completo</label>
+        <input type="text" name="nome" required class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Último Cargo</label>
+        <input type="text" name="cargo" required class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Última Data Demissional</label>
+        <input type="date" name="data_demissao" required class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Outras Habilitações</label>
+        <input type="text" name="outras_habilitacoes" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+      </div>
+      <div class="col-span-2">
+        <label class="block text-sm font-medium text-gray-700">Documentos (NR10, NR33, NR35...)</label>
+        <input type="file" name="documentos" multiple class="mt-1 block w-full">
+      </div>
+      <div class="col-span-2">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar Currículo</button>
+      </div>
     </form>
 
-    <hr class="my-6">
-
-    <form id="formUpload" enctype="multipart/form-data" class="space-y-4">
-      <label class="block">Upload de documento (PDF, JPG, PNG):</label>
-      <input type="file" name="documento" accept=".pdf,.jpg,.jpeg,.png" class="w-full" required />
-      <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Enviar Documento</button>
-    </form>
+    <div id="mensagem" class="text-sm text-green-600 font-medium"></div>
   </div>
 
   <script>
-    // Proteção de acesso
-    const token = localStorage.getItem('token');
-    const userType = localStorage.getItem('tipo');
-    if (!token || userType !== 'candidato') {
-      alert("Acesso não autorizado");
-      window.location.href = '/login.html';
-    }
-
-    // Salvar currículo
-    document.getElementById('formCurriculo').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const form = e.target;
-      const body = {
-        nome: form.nome.value,
-        cargo: form.cargo.value,
-        data_demissao: form.data_demissao.value,
-        outras_habilitacoes: form.outras_habilitacoes.value
-      };
-
-      try {
-        const res = await fetch('https://plataforma-curriculos.onrender.com/candidato/curriculo', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(body)
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-          alert('✅ Currículo salvo com sucesso!');
-        } else {
-          alert('❌ Erro ao salvar: ' + (data.erro || 'Erro desconhecido'));
-        }
-      } catch (err) {
-        alert('❌ Falha na requisição.');
+    document.addEventListener('DOMContentLoaded', () => {
+      const usuario = JSON.parse(localStorage.getItem('usuario'));
+      if (!usuario) {
+        window.location.href = 'login.html';
+        return;
       }
+      document.getElementById('nomeUsuario').textContent = usuario.nome;
     });
 
-    // Upload de documento
-    document.getElementById('formUpload').addEventListener('submit', async (e) => {
+    const form = document.getElementById('curriculoForm');
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const formData = new FormData();
-      const fileInput = document.querySelector('input[name="documento"]');
-      formData.append('documento', fileInput.files[0]);
+
+      const token = localStorage.getItem('token');
+      const formData = new FormData(form);
 
       try {
-        const res = await fetch('https://plataforma-curriculos.onrender.com/candidato/upload', {
+        const res = await fetch('https://plataforma-curriculos.onrender.com/candidato/upload-curriculo', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -85,13 +66,20 @@
         });
 
         const data = await res.json();
+        const mensagem = document.getElementById('mensagem');
+
         if (res.ok) {
-          alert('✅ Documento enviado com sucesso!');
+          mensagem.textContent = 'Currículo enviado com sucesso!';
+          mensagem.classList.remove('text-red-600');
+          mensagem.classList.add('text-green-600');
         } else {
-          alert('❌ Erro: ' + (data.erro || 'Erro desconhecido'));
+          mensagem.textContent = data.erro || 'Erro ao enviar currículo.';
+          mensagem.classList.remove('text-green-600');
+          mensagem.classList.add('text-red-600');
         }
       } catch (err) {
-        alert('❌ Erro na requisição.');
+        console.error(err);
+        alert('Erro ao conectar com o servidor.');
       }
     });
   </script>
