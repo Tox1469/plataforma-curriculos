@@ -6,13 +6,22 @@
   <title>Painel da Empresa</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 min-h-screen relative">
   <header class="bg-blue-600 text-white p-4 flex justify-between">
     <h1 class="text-xl font-bold">Painel da Empresa</h1>
     <button onclick="logout()" class="bg-white text-blue-600 px-4 py-1 rounded">Sair</button>
   </header>
 
   <main class="max-w-5xl mx-auto p-6 bg-white shadow-md rounded mt-8">
+    <div class="flex items-center justify-between mb-6">
+      <div class="text-lg font-semibold text-gray-700">
+        Créditos: <span id="meusCreditos" class="text-indigo-600">--</span>
+      </div>
+      <a href="comprar_creditos.html" class="inline-block text-center bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700">
+        Comprar Créditos
+      </a>
+    </div>
+
     <h2 class="text-xl font-semibold mb-4">Candidatos Disponíveis</h2>
     <div id="listaCandidatos" class="space-y-4"></div>
   </main>
@@ -22,7 +31,7 @@
     if (!token || localStorage.getItem('tipo') !== 'empresa') window.location.href = 'login.html';
 
     async function carregarCandidatos() {
-      const res = await fetch('https://plataforma-curriculos.onrender.com/empresa/listar', {
+      const res = await fetch('https://plataforma-curriculos.onrender.com/empresa/candidatos', {
         headers: { 'Authorization': 'Bearer ' + token }
       });
       const lista = await res.json();
@@ -31,40 +40,51 @@
 
       lista.forEach(c => {
         const item = document.createElement('div');
-        item.className = "border p-4 rounded shadow flex justify-between items-center";
+        item.className = "border border-gray-200 p-6 rounded-xl shadow bg-white space-y-2";
         item.innerHTML = `
-          <div>
-            <p><strong>Nome:</strong> ${c.nome}</p>
-            <p><strong>Último Cargo:</strong> ${c.ultimo_cargo || '-'}</p>
-            <p><strong>Demissão:</strong> ${c.data_demissao || '-'}</p>
+          <p><strong>Nome:</strong> ${c.nome}</p>
+          <p><strong>Último Cargo:</strong> ${c.ultimo_cargo || '-'}</p>
+          <p><strong>Data Demissão:</strong> ${c.data_demissao || '-'}</p>
+          <div class="flex gap-3 mt-3">
+            <button onclick="abrirCurriculo(${c.usuario_id})" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Ver Currículo</button>
           </div>
-          <button class="bg-green-600 text-white px-4 py-2 rounded" onclick="verDetalhes(${c.id})">Ver Detalhes (-1 crédito)</button>
         `;
         container.appendChild(item);
       });
     }
 
-    async function verDetalhes(id) {
-      const res = await fetch(`https://plataforma-curriculos.onrender.com/empresa/detalhes/${id}`, {
+    async function carregarCreditos() {
+      const res = await fetch('https://plataforma-curriculos.onrender.com/empresa/me', {
         headers: { 'Authorization': 'Bearer ' + token }
       });
+      const user = await res.json();
+      document.getElementById('meusCreditos').textContent = user.creditos || 0;
+    }
 
-      if (res.ok) {
-        const c = await res.json();
-        alert(
-          `Nome: ${c.nome}\n` +
-          `Último Cargo: ${c.ultimo_cargo}\n` +
-          `Demissão: ${c.data_demissao}\n` +
-          `NR10: ${c.nr10 ? 'Sim' : 'Não'}\n` +
-          `NR33: ${c.nr33 ? 'Sim' : 'Não'}\n` +
-          `NR35: ${c.nr35 ? 'Sim' : 'Não'}\n` +
-          `Outras: ${c.outras}`
-        );
-        carregarCandidatos(); // opcional
-      } else {
-        const erro = await res.json();
-        alert('Erro: ' + erro.erro);
-      }
+    async function abrirCurriculo(usuarioId) {
+      const res = await fetch(`https://plataforma-curriculos.onrender.com/admin/curriculo/${usuarioId}`, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const c = await res.json();
+      if (!c || !c.nome) return alert('Currículo não encontrado');
+
+      const modal = document.createElement('div');
+      modal.className = "fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50";
+      modal.innerHTML = `
+        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-xl">
+          <h2 class="text-xl font-bold mb-4">${c.nome}</h2>
+          <p><strong>Último Cargo:</strong> ${c.ultimo_cargo || '-'}</p>
+          <p><strong>Data Demissão:</strong> ${c.data_demissao || '-'}</p>
+          <p><strong>NR10:</strong> ${c.nr10 ? 'Sim' : 'Não'}</p>
+          <p><strong>NR33:</strong> ${c.nr33 ? 'Sim' : 'Não'}</p>
+          <p><strong>NR35:</strong> ${c.nr35 ? 'Sim' : 'Não'}</p>
+          <p><strong>Outras:</strong> ${c.outras || '-'}</p>
+          <div class="mt-4 text-right">
+            <button onclick="this.closest('.fixed').remove()" class="bg-red-600 text-white px-4 py-2 rounded">Fechar</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
     }
 
     function logout() {
@@ -72,6 +92,7 @@
       window.location.href = 'login.html';
     }
 
+    carregarCreditos();
     carregarCandidatos();
   </script>
 </body>

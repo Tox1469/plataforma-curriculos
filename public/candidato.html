@@ -3,89 +3,83 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Painel do Candidato</title>
+  <title>Portal do Candidato</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100">
-  <header class="bg-blue-600 text-white p-4 flex justify-between">
-    <h1 class="text-xl font-bold">Painel do Candidato</h1>
-    <button onclick="logout()" class="bg-white text-blue-600 px-4 py-1 rounded">Sair</button>
-  </header>
+<body class="bg-gray-100 min-h-screen p-6">
+  <main class="max-w-3xl mx-auto space-y-8 bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold text-gray-800">Bem-vindo(a), Candidato</h1>
 
-  <main class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded mt-8">
-    <h2 class="text-xl font-semibold mb-4">Meu Currículo</h2>
     <form id="formCurriculo" class="space-y-4">
-      <input type="text" name="nome" placeholder="Nome completo" class="w-full border p-2 rounded" required />
-      <input type="text" name="ultimo_cargo" placeholder="Último cargo exercido" class="w-full border p-2 rounded" />
-      <input type="date" name="data_demissao" placeholder="Última data de demissão" class="w-full border p-2 rounded" />
-
-      <div class="grid grid-cols-2 gap-4">
-        <label><input type="checkbox" name="nr10" /> Habilitação NR10</label>
-        <label><input type="checkbox" name="nr33" /> Habilitação NR33</label>
-        <label><input type="checkbox" name="nr35" /> Habilitação NR35</label>
+      <input type="text" id="nome" placeholder="Nome Completo" required class="w-full border p-2 rounded"/>
+      <input type="text" id="ultimoCargo" placeholder="Último Cargo" class="w-full border p-2 rounded"/>
+      <input type="date" id="dataDemissao" class="w-full border p-2 rounded"/>
+      <label class="block mt-4 font-medium text-gray-700">Habilitações:</label>
+      <div class="flex gap-4">
+        <label><input type="checkbox" id="nr10"> NR10</label>
+        <label><input type="checkbox" id="nr33"> NR33</label>
+        <label><input type="checkbox" id="nr35"> NR35</label>
       </div>
-
-      <textarea name="outras" rows="3" placeholder="Outras certificações" class="w-full border p-2 rounded"></textarea>
-      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Salvar Currículo</button>
+      <textarea id="outras" placeholder="Outras certificações ou observações..." class="w-full border p-2 rounded"></textarea>
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar Currículo</button>
     </form>
+
+    <section class="bg-gray-50 p-6 rounded shadow">
+      <h2 class="text-lg font-semibold mb-4">Enviar Documento (PDF ou Imagem)</h2>
+      <form id="formUpload" enctype="multipart/form-data">
+        <input type="file" name="documento" accept=".pdf,.jpg,.jpeg,.png" required class="mb-4 block w-full"/>
+        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Enviar Documento</button>
+      </form>
+      <p id="uploadMsg" class="text-sm text-green-600 mt-2 hidden">Documento enviado com sucesso!</p>
+    </section>
   </main>
 
   <script>
     const token = localStorage.getItem('token');
     if (!token || localStorage.getItem('tipo') !== 'candidato') window.location.href = 'login.html';
 
-    const form = document.getElementById('formCurriculo');
-
-    async function carregarCurriculo() {
-      const res = await fetch('https://plataforma-curriculos.onrender.com/candidato/meu', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      const dados = await res.json();
-      if (dados && dados.nome) {
-        form.nome.value = dados.nome;
-        form.ultimo_cargo.value = dados.ultimo_cargo || '';
-        form.data_demissao.value = dados.data_demissao || '';
-        form.nr10.checked = !!dados.nr10;
-        form.nr33.checked = !!dados.nr33;
-        form.nr35.checked = !!dados.nr35;
-        form.outras.value = dados.outras || '';
-      }
-    }
-
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('formCurriculo').addEventListener('submit', async e => {
       e.preventDefault();
-      const dados = {
-        nome: form.nome.value,
-        ultimo_cargo: form.ultimo_cargo.value,
-        data_demissao: form.data_demissao.value,
-        nr10: form.nr10.checked,
-        nr33: form.nr33.checked,
-        nr35: form.nr35.checked,
-        outras: form.outras.value
+      const payload = {
+        nome: document.getElementById('nome').value,
+        ultimo_cargo: document.getElementById('ultimoCargo').value,
+        data_demissao: document.getElementById('dataDemissao').value,
+        nr10: document.getElementById('nr10').checked,
+        nr33: document.getElementById('nr33').checked,
+        nr35: document.getElementById('nr35').checked,
+        outras: document.getElementById('outras').value,
       };
 
       const res = await fetch('https://plataforma-curriculos.onrender.com/candidato/curriculo', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer ' + token,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
         },
-        body: JSON.stringify(dados)
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) alert('Currículo salvo com sucesso!');
+      else alert('Erro ao salvar currículo.');
+    });
+
+    document.getElementById('formUpload').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+
+      const res = await fetch('https://plataforma-curriculos.onrender.com/candidato/upload', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token },
+        body: formData
       });
 
       if (res.ok) {
-        alert('Currículo salvo com sucesso!');
+        document.getElementById('uploadMsg').classList.remove('hidden');
+        e.target.reset();
       } else {
-        alert('Erro ao salvar currículo');
+        alert('Erro ao enviar o documento.');
       }
     });
-
-    function logout() {
-      localStorage.clear();
-      window.location.href = 'login.html';
-    }
-
-    carregarCurriculo();
   </script>
 </body>
 </html>
