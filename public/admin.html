@@ -2,76 +2,97 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Painel Master</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100">
-  <header class="bg-blue-600 text-white p-4 flex justify-between">
-    <h1 class="text-xl font-bold">Painel Master</h1>
-    <button onclick="logout()" class="bg-white text-blue-600 px-4 py-1 rounded">Sair</button>
-  </header>
+<body class="bg-gray-100 min-h-screen p-6">
+  <div class="max-w-5xl mx-auto bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold mb-6">Painel do Administrador</h1>
 
-  <main class="max-w-5xl mx-auto p-6 bg-white shadow-md rounded mt-8">
-    <h2 class="text-xl font-semibold mb-4">Usuários Cadastrados</h2>
-    <div id="listaUsuarios" class="space-y-4"></div>
-  </main>
+    <!-- Seção: Adicionar Créditos -->
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-2">Adicionar Créditos Manualmente</h2>
+      <form id="form-creditos" class="flex flex-col md:flex-row items-center gap-4">
+        <input type="email" id="emailEmpresa" placeholder="Email da Empresa" class="p-2 border rounded w-full md:w-1/2" required />
+        <input type="number" id="qtdCreditos" placeholder="Quantidade" class="p-2 border rounded w-full md:w-1/4" required />
+        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Adicionar</button>
+      </form>
+    </section>
+
+    <!-- Seção: Lista de Usuários -->
+    <section>
+      <h2 class="text-xl font-semibold mb-4">Gerenciar Usuários</h2>
+      <ul id="listaUsuarios" class="space-y-2"></ul>
+    </section>
+  </div>
 
   <script>
-    const token = localStorage.getItem('token');
-    if (!token || localStorage.getItem('tipo') !== 'admin') window.location.href = 'login.html';
+    const token = localStorage.getItem("token");
+    if (!token) window.location.href = "login.html";
 
+    // Adicionar créditos manualmente
+    document.getElementById("form-creditos").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("emailEmpresa").value;
+      const qtd = document.getElementById("qtdCreditos").value;
+      try {
+        const res = await fetch("https://plataforma-curriculos.onrender.com/admin/creditos", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ email, qtd }),
+        });
+        const data = await res.json();
+        alert(data.msg || data.erro);
+      } catch (err) {
+        console.error(err);
+        alert("Erro ao adicionar créditos.");
+      }
+    });
+
+    // Carregar usuários e adicionar botão de excluir
     async function carregarUsuarios() {
-      const res = await fetch('https://plataforma-curriculos.onrender.com/admin/usuarios', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      const lista = await res.json();
-      const container = document.getElementById('listaUsuarios');
-      container.innerHTML = '';
-
-      lista.forEach(u => {
-        const item = document.createElement('div');
-        item.className = "border p-4 rounded shadow flex justify-between items-center";
-        item.innerHTML = `
-          <div>
-            <p><strong>Nome:</strong> ${u.nome}</p>
-            <p><strong>Email:</strong> ${u.email}</p>
-            <p><strong>Tipo:</strong> ${u.tipo}</p>
-            <p><strong>CPF/CNPJ:</strong> ${u.cpf_cnpj}</p>
-            <p><strong>Créditos:</strong> ${u.creditos}</p>
-          </div>
-          ${u.tipo === 'empresa' ? `
-          <button onclick="adicionarCreditos(${u.id})" class="bg-indigo-600 text-white px-4 py-2 rounded">+ Créditos</button>
-          ` : ''}
-        `;
-        container.appendChild(item);
-      });
-    }
-
-    async function adicionarCreditos(usuarioId) {
-      const quantidade = prompt("Quantos créditos deseja adicionar?");
-      if (!quantidade) return;
-
-      const res = await fetch('https://plataforma-curriculos.onrender.com/admin/add-creditos', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ usuarioId, quantidade: Number(quantidade) })
-      });
-
-      if (res.ok) {
-        alert('Créditos adicionados com sucesso!');
-        carregarUsuarios();
-      } else {
-        alert('Erro ao adicionar créditos');
+      try {
+        const res = await fetch("https://plataforma-curriculos.onrender.com/admin/usuarios", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const usuarios = await res.json();
+        const lista = document.getElementById("listaUsuarios");
+        lista.innerHTML = "";
+        usuarios.forEach((u) => {
+          const li = document.createElement("li");
+          li.className = "p-4 bg-gray-100 rounded flex justify-between items-center";
+          li.innerHTML = `
+            <div>
+              <p><strong>${u.nome}</strong> (${u.tipo}) - ${u.email}</p>
+            </div>
+            <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700" onclick="excluirUsuario('${u.id}')">Excluir</button>
+          `;
+          lista.appendChild(li);
+        });
+      } catch (err) {
+        console.error(err);
+        alert("Erro ao carregar usuários.");
       }
     }
 
-    function logout() {
-      localStorage.clear();
-      window.location.href = 'login.html';
+    async function excluirUsuario(id) {
+      if (!confirm("Tem certeza que deseja excluir este usuário?")) return;
+      try {
+        const res = await fetch(`https://plataforma-curriculos.onrender.com/admin/usuario/${id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        alert(data.msg || data.erro);
+        carregarUsuarios();
+      } catch (err) {
+        console.error(err);
+        alert("Erro ao excluir usuário.");
+      }
     }
 
     carregarUsuarios();
