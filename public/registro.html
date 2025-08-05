@@ -1,66 +1,62 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastro - Plataforma de Currículos</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registro - Plataforma de Currículos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
-  <div class="bg-white shadow-md rounded-lg p-8 w-full max-w-md">
-    <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Cadastro de Candidato</h2>
-    <form id="registroForm" class="space-y-4">
-      <div>
-        <label for="nome" class="block text-sm font-medium text-gray-700">Nome Completo</label>
-        <input type="text" id="nome" name="nome" required class="mt-1 block w-full px-3 py-2 border rounded-md">
-      </div>
-      <div>
-        <label for="cpf" class="block text-sm font-medium text-gray-700">CPF</label>
-        <input type="text" id="cpf" name="cpf" required class="mt-1 block w-full px-3 py-2 border rounded-md">
-      </div>
-      <div>
-        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-        <input type="email" id="email" name="email" required class="mt-1 block w-full px-3 py-2 border rounded-md">
-      </div>
-      <div>
-        <label for="senha" class="block text-sm font-medium text-gray-700">Senha</label>
-        <input type="password" id="senha" name="senha" required class="mt-1 block w-full px-3 py-2 border rounded-md">
-      </div>
-      <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">Cadastrar</button>
+  <div class="bg-white shadow-xl rounded-xl p-8 w-full max-w-lg">
+    <h2 class="text-2xl font-bold text-center mb-6">Criar Conta</h2>
+    <form id="formRegistro" class="space-y-4">
+      <input class="w-full p-2 border rounded" type="text" name="nome" placeholder="Nome completo" required />
+      <input class="w-full p-2 border rounded" type="email" name="email" placeholder="Email" required />
+      <input class="w-full p-2 border rounded" type="password" name="senha" placeholder="Senha" required />
+      
+      <select name="tipo" class="w-full p-2 border rounded" required>
+        <option value="">Selecione o tipo de usuário</option>
+        <option value="admin">Master (Admin)</option>
+        <option value="empresa">Empresa</option>
+        <option value="candidato">Candidato</option>
+      </select>
+
+      <input class="w-full p-2 border rounded" type="text" name="cpf_cnpj" placeholder="CPF ou CNPJ" required />
+      
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+        Registrar
+      </button>
     </form>
-    <p class="text-sm text-center text-gray-600 mt-4">Já tem conta? <a href="login.html" class="text-blue-600 hover:underline">Faça login</a></p>
+
+    <p class="text-sm text-center mt-4">
+      Já tem uma conta? <a href="login.html" class="text-blue-500 underline">Faça login</a>
+    </p>
   </div>
 
   <script>
-    const form = document.getElementById('registroForm');
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('formRegistro').addEventListener('submit', async (e) => {
       e.preventDefault();
-
+      const form = e.target;
       const data = {
         nome: form.nome.value,
-        cpf: form.cpf.value,
         email: form.email.value,
         senha: form.senha.value,
+        tipo: form.tipo.value,
+        cpf_cnpj: form.cpf_cnpj.value
       };
 
-      try {
-        const res = await fetch('https://plataforma-curriculos.onrender.com/candidato/registro', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
+      const res = await fetch('https://plataforma-curriculos.onrender.com/auth/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
 
-        const json = await res.json();
-
-        if (res.ok) {
-          alert('Cadastro realizado com sucesso!');
-          window.location.href = 'login.html';
-        } else {
-          alert(json.erro || 'Erro ao cadastrar.');
-        }
-      } catch (err) {
-        console.error(err);
-        alert('Erro ao conectar com o servidor.');
+      if (res.ok) {
+        alert('Registro realizado com sucesso!');
+        window.location.href = 'login.html';
+      } else {
+        const error = await res.json();
+        alert('Erro: ' + error.erro);
       }
     });
   </script>
