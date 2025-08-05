@@ -1,63 +1,93 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Plataforma de Currículos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-  <div class="bg-white shadow-md rounded-lg p-8 max-w-md w-full">
-    <h2 class="text-2xl font-bold text-center mb-6">Entrar</h2>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+
+  <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    <h2 class="text-2xl font-bold text-center mb-6">Login</h2>
+    
     <form id="loginForm" class="space-y-4">
       <div>
-        <label class="block text-gray-700">Email</label>
-        <input type="email" name="email" required class="w-full p-2 border rounded">
+        <label for="email" class="block text-gray-700">Email</label>
+        <input type="email" name="email" required class="w-full p-2 border border-gray-300 rounded" />
       </div>
+
       <div>
-        <label class="block text-gray-700">Senha</label>
-        <input type="password" name="senha" required class="w-full p-2 border rounded">
+        <label for="senha" class="block text-gray-700">Senha</label>
+        <input type="password" name="senha" required class="w-full p-2 border border-gray-300 rounded" />
       </div>
-      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Login</button>
+
+      <div>
+        <label for="tipo" class="block text-gray-700">Tipo de Usuário</label>
+        <select name="tipo" required class="w-full p-2 border border-gray-300 rounded">
+          <option value="">Selecione</option>
+          <option value="candidato">Candidato</option>
+          <option value="empresa">Empresa</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+
+      <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+        Entrar
+      </button>
     </form>
-    <p class="text-center text-sm mt-4">Não tem conta? <a href="registro.html" class="text-blue-600 hover:underline">Cadastre-se</a></p>
-    <p id="erro" class="text-red-500 text-sm mt-3 text-center"></p>
   </div>
 
   <script>
-    document.getElementById('loginForm').addEventListener('submit', async function (e) {
+    const form = document.getElementById('loginForm');
+
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = this.email.value;
-      const senha = this.senha.value;
+
+      const dados = {
+        email: form.email.value,
+        senha: form.senha.value,
+        tipo: form.tipo.value,
+      };
 
       try {
-        const res = await fetch('https://plataforma-curriculos.onrender.com/auth/login', {
+        const res = await fetch('https://plataforma-curriculos.onrender.com/login', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, senha })
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(dados),
         });
 
-        const data = await res.json();
+        const resultado = await res.json();
 
         if (res.ok) {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('usuario', JSON.stringify(data.usuario));
+          localStorage.setItem('token', resultado.token);
 
-          if (data.usuario.tipo === 'admin') {
-            window.location.href = 'admin.html';
-          } else if (data.usuario.tipo === 'empresa') {
-            window.location.href = 'empresa.html';
-          } else {
-            window.location.href = 'candidato.html';
+          // Redirecionamento baseado no tipo
+          switch (dados.tipo) {
+            case 'admin':
+              window.location.href = '/admin.html';
+              break;
+            case 'empresa':
+              window.location.href = '/empresa.html';
+              break;
+            case 'candidato':
+              window.location.href = '/candidato.html';
+              break;
+            default:
+              alert('Tipo de usuário inválido.');
           }
         } else {
-          document.getElementById('erro').textContent = data.erro || 'Login falhou';
+          alert(resultado.erro || 'Falha ao fazer login');
         }
-      } catch (err) {
-        document.getElementById('erro').textContent = 'Erro ao conectar com o servidor';
-        console.error(err);
+
+      } catch (erro) {
+        console.error(erro);
+        alert('Erro de conexão com o servidor.');
       }
     });
   </script>
+
 </body>
 </html>
