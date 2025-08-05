@@ -3,76 +3,99 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Painel da Empresa</title>
+  <title>Dashboard da Empresa</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100">
-  <header class="bg-blue-600 text-white p-4 flex justify-between">
-    <h1 class="text-xl font-bold">Painel da Empresa</h1>
-    <button onclick="logout()" class="bg-white text-blue-600 px-4 py-1 rounded">Sair</button>
-  </header>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-6">
 
-  <main class="max-w-5xl mx-auto p-6 bg-white shadow-md rounded mt-8">
-    <h2 class="text-xl font-semibold mb-4">Candidatos Disponíveis</h2>
-    <div id="listaCandidatos" class="space-y-4"></div>
-  </main>
+  <div class="w-full max-w-4xl bg-white rounded-lg shadow-lg p-6 mt-4">
+    <h2 class="text-2xl font-bold mb-4 text-center">Bem-vindo à Plataforma</h2>
+
+    <div class="flex justify-between items-center mb-6">
+      <p class="text-gray-700">Seus créditos: <span id="creditos" class="font-bold">0</span></p>
+      <button id="comprarCreditos" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+        Comprar Créditos
+      </button>
+    </div>
+
+    <h3 class="text-xl font-semibold mb-2">Currículos Disponíveis</h3>
+    <ul id="curriculos" class="space-y-2"></ul>
+  </div>
 
   <script>
-    const token = localStorage.getItem('token');
-    if (!token || localStorage.getItem('tipo') !== 'empresa') window.location.href = 'login.html';
-
-    async function carregarCandidatos() {
-      const res = await fetch('http://localhost:3001/empresa/listar', {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      const lista = await res.json();
-      const container = document.getElementById('listaCandidatos');
-      container.innerHTML = '';
-
-      lista.forEach(c => {
-        const item = document.createElement('div');
-        item.className = "border p-4 rounded shadow flex justify-between items-center";
-        item.innerHTML = `
-          <div>
-            <p><strong>Nome:</strong> ${c.nome}</p>
-            <p><strong>Último Cargo:</strong> ${c.ultimo_cargo || '-'}</p>
-            <p><strong>Demissão:</strong> ${c.data_demissao || '-'}</p>
-          </div>
-          <button class="bg-green-600 text-white px-4 py-2 rounded" onclick="verDetalhes(${c.id})">Ver Detalhes (-1 crédito)</button>
-        `;
-        container.appendChild(item);
-      });
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "login.html";
     }
 
-    async function verDetalhes(id) {
-      const res = await fetch(`http://localhost:3001/empresa/detalhes/${id}`, {
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-
-      if (res.ok) {
-        const c = await res.json();
-        alert(
-          `Nome: ${c.nome}\n` +
-          `Último Cargo: ${c.ultimo_cargo}\n` +
-          `Demissão: ${c.data_demissao}\n` +
-          `NR10: ${c.nr10 ? 'Sim' : 'Não'}\n` +
-          `NR33: ${c.nr33 ? 'Sim' : 'Não'}\n` +
-          `NR35: ${c.nr35 ? 'Sim' : 'Não'}\n` +
-          `Outras: ${c.outras}`
-        );
-        carregarCandidatos(); // opcional
-      } else {
-        const erro = await res.json();
-        alert('Erro: ' + erro.erro);
+    async function carregarCreditos() {
+      try {
+        const res = await fetch("https://plataforma-curriculos.onrender.com/empresa/creditos", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        });
+        const dados = await res.json();
+        if (res.ok) {
+          document.getElementById("creditos").innerText = dados.creditos;
+        } else {
+          alert(dados.erro || "Erro ao carregar créditos");
+        }
+      } catch (err) {
+        console.error("Erro ao buscar créditos:", err);
+        alert("Erro ao buscar créditos.");
       }
     }
 
-    function logout() {
-      localStorage.clear();
-      window.location.href = 'login.html';
+    async function carregarCurriculos() {
+      try {
+        const res = await fetch("https://plataforma-curriculos.onrender.com/empresa/curriculos", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        });
+        const dados = await res.json();
+        if (res.ok) {
+          const lista = document.getElementById("curriculos");
+          dados.forEach(candidato => {
+            const li = document.createElement("li");
+            li.className = "p-4 bg-gray-100 rounded border";
+
+            li.innerHTML = `
+              <p><strong>Nome:</strong> ${candidato.nome}</p>
+              <p><strong>Último cargo:</strong> ${candidato.ultimo_cargo}</p>
+              <p><strong>Última demissão:</strong> ${candidato.ultima_demissao}</p>
+              <p><strong>NR10:</strong> ${candidato.nr10 ? 'Sim' : 'Não'} |
+                 <strong>NR33:</strong> ${candidato.nr33 ? 'Sim' : 'Não'} |
+                 <strong>NR35:</strong> ${candidato.nr35 ? 'Sim' : 'Não'}</p>
+              <button onclick="verCurriculo('${candidato.id}')" class="mt-2 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
+                Ver Currículo
+              </button>
+            `;
+            lista.appendChild(li);
+          });
+        } else {
+          alert(dados.erro || "Erro ao carregar currículos");
+        }
+      } catch (err) {
+        console.error("Erro ao buscar currículos:", err);
+        alert("Erro ao buscar currículos.");
+      }
     }
 
-    carregarCandidatos();
+    function verCurriculo(id) {
+      window.open(`https://plataforma-curriculos.onrender.com/curriculos/${id}`, "_blank");
+    }
+
+    document.getElementById("comprarCreditos").addEventListener("click", () => {
+      alert("Funcionalidade de compra de créditos ainda não implementada.");
+    });
+
+    carregarCreditos();
+    carregarCurriculos();
   </script>
+
 </body>
 </html>
