@@ -40,13 +40,33 @@
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       const usuario = JSON.parse(localStorage.getItem('usuario'));
-      if (!usuario) {
+      const token = localStorage.getItem('token');
+
+      if (!usuario || usuario.tipo !== 'candidato' || !token) {
         window.location.href = 'login.html';
         return;
       }
-      document.getElementById('nomeUsuario').textContent = usuario.nome;
+
+      document.getElementById('nomeUsuario').textContent = usuario.nome || 'Candidato';
+
+      try {
+        const res = await fetch('https://plataforma-curriculos.onrender.com/candidato/meu', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (res.ok) {
+          const dados = await res.json();
+          for (const campo in dados) {
+            if (form[campo]) form[campo].value = dados[campo];
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao carregar dados do currículo:', err);
+      }
     });
 
     const form = document.getElementById('curriculoForm');
@@ -57,7 +77,7 @@
       const formData = new FormData(form);
 
       try {
-        const res = await fetch('https://SEU_BACKEND/candidato/upload-curriculo', {
+        const res = await fetch('https://plataforma-curriculos.onrender.com/candidato/curriculo', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -69,11 +89,11 @@
         const mensagem = document.getElementById('mensagem');
 
         if (res.ok) {
-          mensagem.textContent = 'Currículo enviado com sucesso!';
+          mensagem.textContent = 'Currículo salvo com sucesso!';
           mensagem.classList.remove('text-red-600');
           mensagem.classList.add('text-green-600');
         } else {
-          mensagem.textContent = data.erro || 'Erro ao enviar currículo.';
+          mensagem.textContent = data.erro || 'Erro ao salvar currículo.';
           mensagem.classList.remove('text-green-600');
           mensagem.classList.add('text-red-600');
         }
