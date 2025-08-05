@@ -1,22 +1,17 @@
 const jwt = require('jsonwebtoken');
-const chaveSecreta = process.env.JWT_SECRET || 'chave_super_secreta';
+const segredo = process.env.JWT_SECRET || 'segredo-padrao';
 
 function autenticar(req, res, next) {
-  const authHeader = req.headers.authorization;
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
-  if (!authHeader) {
-    return res.status(401).json({ erro: 'Token não informado.' });
-  }
+  if (!token) return res.status(401).json({ erro: 'Token não fornecido.' });
 
-  const token = authHeader.split(' ')[1];
-
-  try {
-    const decoded = jwt.verify(token, chaveSecreta);
-    req.usuario = decoded;
+  jwt.verify(token, segredo, (err, usuario) => {
+    if (err) return res.status(403).json({ erro: 'Token inválido.' });
+    req.usuario = usuario;
     next();
-  } catch (err) {
-    return res.status(401).json({ erro: 'Token inválido.' });
-  }
+  });
 }
 
 module.exports = autenticar;
